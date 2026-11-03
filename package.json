@@ -22,7 +22,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "release:prepare": "node scripts/prepare-release.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -30,10 +31,12 @@
   "license": "MIT",
   "dependencies": {
     "@llm-discovery/discovery-core": "file:vendor/llm-discovery-discovery-core-0.3.0.tgz",
-    "multicast-dns": "7.2.5",
-    "dns-packet": "5.6.1"
+    "dns-packet": "5.6.1",
+    "multicast-dns": "7.2.5"
   },
   "bundleDependencies": [
-    "@llm-discovery/discovery-core"
+    "@llm-discovery/discovery-core",
+    "multicast-dns",
+    "dns-packet"
   ]
 }

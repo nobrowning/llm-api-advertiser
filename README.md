@@ -10,6 +10,26 @@ The [draft's TXT table](https://datatracker.ietf.org/doc/html/draft-cui-dawn-loc
 
 ## Install
 
+Download `llm-discovery-advertiser-0.3.0.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/nobrowning/llm-api-advertiser/releases). With Node.js 22 or later and npm installed, create a working directory, place the archive there, and run:
+
+```sh
+npm install --offline --ignore-scripts --no-audit --no-fund ./llm-discovery-advertiser-0.3.0.tgz
+npx --no-install llm-api-advertise --help
+```
+
+The archive includes the shared core and all JavaScript runtime dependencies. You do not need another source checkout, a separately installed core, or npm registry access to install it. Node.js itself is not bundled. The package is distributed through GitHub Releases and is not published to the npm registry.
+
+Copy `node_modules/@llm-discovery/advertiser/examples/advertiser.json` to `my-services.json`, edit it for your API, then validate and announce it:
+
+```sh
+npx --no-install llm-api-advertise --config ./my-services.json --check
+npx --no-install llm-api-advertise --config ./my-services.json --interface 192.168.1.20
+```
+
+On Linux, verify the downloaded archive with `sha256sum --check SHA256SUMS`. On Windows, compare `(Get-FileHash .\llm-discovery-advertiser-0.3.0.tgz -Algorithm SHA256).Hash` with the entry in `SHA256SUMS`. The archive runs the announcer only; your actual API and its TLS/authentication settings are still required.
+
+### From source
+
 Requires Node.js 22 or newer. Clone this repository and run the following commands from its root. The versioned discovery-core archive is committed under `vendor/`, so no sibling checkout or prior npm publication of core is needed. npm downloads the locked third-party dependencies normally.
 
 ```sh
@@ -91,8 +111,10 @@ mDNS announces connection hints. It does not authenticate a service, deliver tok
 
 ```sh
 npm test
-npm pack --dry-run
+npm run release:prepare
 ```
+
+`release:prepare` checks the package allowlist and bundled dependency set, checks reproducible archive bytes, and installs the final archive offline into an isolated temporary project with an empty npm cache. It checks the installed exports and CLI `--help` / `--check` without opening a multicast socket. The archive and `SHA256SUMS` are written to `.release-artifacts/`; an optional output directory can be supplied after `--`. A matching version tag (for example `v0.3.0`) runs the same checks and creates a draft GitHub Release for review. The workflow never publishes to npm.
 
 MIT licensed. The shared discovery-core dependency and this announcer are separate reusable packages; the demonstration is a separate consumer.
 

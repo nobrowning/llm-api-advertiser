@@ -12,4 +12,4 @@ When updating core:
 4. Run `npm ci --ignore-scripts`, `npm test` and `npm pack --dry-run`; check that the packed dependencies retain their original license files.
 5. Update provenance/version records and third-party notices when their contents or versions change, then commit the archive, manifests and documentation together.
 
-No upstream Git remote URL or release tag is claimed while these repositories are only local. Add the verified upstream URL and release/tag when publishing the repositories.
+Upstream source: [nobrowning/llm-discovery-core](https://github.com/nobrowning/llm-discovery-core). The first public `v0.3.0` release uses the archive from core commit `d0c07b4`, including its release installation documentation and tooling metadata; runtime code is unchanged from the earlier development snapshot. Its SHA-256 is `7b7cbd798ebc92922c47acceda4a42c993b03870494c533c89ce3532e5f2f151`. The lockfile pins the exact archive bytes. Future published versions must not be silently replaced.

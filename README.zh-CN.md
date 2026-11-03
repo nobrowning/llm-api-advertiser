@@ -4,7 +4,23 @@
 
 这个独立模块为已有的 LLM API 发布 `_llm-api._tcp.local` mDNS/DNS-SD 记录，可作为命令行程序运行，也可嵌入 Node.js 服务进程。它不依赖 DeepSeek Harness 或 Demo，不启动模型或 API 服务。
 
-需要 Node.js 22 或更新版本。克隆本仓库后直接执行：
+需要 Node.js 22 或更新版本。普通部署可从 [GitHub Releases](https://github.com/nobrowning/llm-api-advertiser/releases) 下载 `llm-discovery-advertiser-0.3.0.tgz` 和 `SHA256SUMS`。在新建的工作目录中安装下载包：
+
+```sh
+npm install --offline --ignore-scripts --no-audit --no-fund ./llm-discovery-advertiser-0.3.0.tgz
+npx --no-install llm-api-advertise --help
+```
+
+包内包含核心库和全部 JavaScript 运行依赖，无需另装其他仓库，也无需访问 npm registry。Node.js 运行时需自行安装。将 `node_modules/@llm-discovery/advertiser/examples/advertiser.json` 复制为 `my-services.json` 并填写自己的服务配置，然后执行：
+
+```sh
+npx --no-install llm-api-advertise --config ./my-services.json --check
+npx --no-install llm-api-advertise --config ./my-services.json --interface 192.168.1.20
+```
+
+Linux 使用 `sha256sum --check SHA256SUMS` 校验下载包；Windows 使用 `Get-FileHash .\llm-discovery-advertiser-0.3.0.tgz -Algorithm SHA256`，与校验文件中的值比较。此工具只公告已有 API，不包含模型或 API 服务。
+
+也可以克隆本仓库后从源码安装：
 
 ```sh
 npm ci --ignore-scripts
@@ -26,7 +42,9 @@ node cli.mjs --config ./my-services.json --interface 192.168.1.20
 
 ```sh
 npm test
-npm pack --dry-run
+npm run release:prepare
 ```
+
+发行检查会检查文件白名单与依赖、验证重复打包字节一致，并在空 npm 缓存的隔离目录内离线安装最终包，验证导出与 CLI。产物和 `SHA256SUMS` 位于 `.release-artifacts/`。版本 tag 会触发创建待审阅的 GitHub Release 草稿，不会发布到 npm。
 
 采用 MIT 协议；第三方组件的原始 MIT 版权与许可文本保留，见[第三方说明](THIRD_PARTY_NOTICES.md)。更新共享 core 时，按 [vendor 维护说明](vendor/README.md) 更新包版本和 lockfile。
