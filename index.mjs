@@ -1,6 +1,6 @@
 import multicastDns from 'multicast-dns';
 import dnsPacket from 'dns-packet';
-import { canonicalName, SERVICE_TYPE, serviceRecords, normalizeRecord, recordIdentity } from '@llm-discovery/discovery-core';
+import { canonicalName, SERVICE_TYPE, serviceRecords, normalizeRecord, recordIdentity, listIPv4Interfaces, requireLocalIPv4Interface } from '@llm-discovery/discovery-core';
 
 const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const same = (a, b) => recordIdentity(a) !== null && recordIdentity(a) === recordIdentity(b);
@@ -23,7 +23,7 @@ function compareSets(ours, theirs) {
 }
 
 export function createAdvertiser({ services, interfaceAddress, ttl = 120, logger = () => {}, port = 5353,
-  transportFactory = (config) => multicastDns(config), sleep = defaultSleep, random = Math.random, now = Date.now }) {
+  transportFactory = (config) => multicastDns(config), networkInterfaces, sleep = defaultSleep, random = Math.random, now = Date.now }) {
   if (!Array.isArray(services) || !services.length || new Set(services.map((s) => s.id)).size !== services.length) throw new Error('Unique service IDs are required');
   for (const service of services) serviceRecords(service, ttl);
   let mdns;
@@ -144,9 +144,13 @@ export function createAdvertiser({ services, interfaceAddress, ttl = 120, logger
     if (starting) return starting;
     if (mdns) return;
     if (stopping) await stopping;
+    const available = listIPv4Interfaces(networkInterfaces);
+    const selectedInterface = interfaceAddress || available[0]?.address;
+    if (!selectedInterface) throw new Error('No active IPv4 interface; use --list-interfaces and select a LAN address.');
+    requireLocalIPv4Interface(selectedInterface, available);
     const expected = ++epoch;
     status = 'probing'; lastDefense = -Infinity;
-    const socket = mdns = transportFactory({ bind: '0.0.0.0', interface: interfaceAddress, port, loopback: true, reuseAddr: true });
+    const socket = mdns = transportFactory({ bind: '0.0.0.0', interface: selectedInterface, port, loopback: true, reuseAddr: true });
     socket.on('query', (packet, rinfo) => { if (mdns === socket) onQuery(packet, rinfo); });
     socket.on('response', (packet) => { if (mdns === socket) responseConflict(packet); });
     socket.on('warning', (error) => log({ type: 'warning', message: error.message }));

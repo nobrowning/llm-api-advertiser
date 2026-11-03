@@ -12,8 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        node: [22, 24]
+        include:
+          - { os: ubuntu-24.04, node: 22, arch: x64 }
+          - { os: ubuntu-24.04, node: 24, arch: x64 }
+          - { os: ubuntu-24.04-arm, node: 24, arch: arm64 }
+          - { os: windows-2022, node: 24, arch: x64 }
+          - { os: macos-15, node: 24, arch: arm64 }
+          - { os: macos-15-intel, node: 24, arch: x64 }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -24,6 +29,10 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
+      - name: Confirm native architecture
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: node -e "if (process.arch !== process.env.EXPECTED_ARCH) process.exit(1); console.log(process.platform, process.arch, process.version)"
       - run: npm ci --ignore-scripts
       - run: npm test
-      - run: npm pack --dry-run
+      - run: npm run release:prepare

@@ -1,6 +1,6 @@
 {
   "name": "@llm-discovery/advertiser",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Reusable DNS-SD/mDNS announcer for local LLM API endpoints.",
   "type": "module",
   "main": "index.mjs",
@@ -30,7 +30,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@llm-discovery/discovery-core": "file:vendor/llm-discovery-discovery-core-0.3.0.tgz",
+    "@llm-discovery/discovery-core": "file:vendor/llm-discovery-discovery-core-0.3.1.tgz",
     "dns-packet": "5.6.1",
     "multicast-dns": "7.2.5"
   },

@@ -1,6 +1,6 @@
 # Vendored package provenance
 
-`llm-discovery-discovery-core-0.3.0.tgz` is the current `npm pack` output of the separate **llm-discovery-core** repository, package `@llm-discovery/discovery-core` version `0.3.0`. It contains that package's source, package metadata, README and original MIT `LICENSE`; it does not contain an installed application, credentials or runtime state. Older versioned archives may remain for provenance but are not selected by the current manifest.
+`llm-discovery-discovery-core-0.3.1.tgz` is the current `npm pack` output of the separate **llm-discovery-core** repository, package `@llm-discovery/discovery-core` version `0.3.1`. It contains that package's source, package metadata, README and original MIT `LICENSE`; it does not contain an installed application, credentials or runtime state. Older versioned archives may remain for provenance but are not selected by the current manifest.
 
 The `file:vendor/...` dependency and committed lockfile allow a clone of this repository to install without a sibling checkout or a public npm release of core. Third-party packages are still resolved using the lockfile. `bundleDependencies` includes core and its required dependency tree in the advertiser's distributable package.
 
@@ -12,4 +12,4 @@ When updating core:
 4. Run `npm ci --ignore-scripts`, `npm test` and `npm pack --dry-run`; check that the packed dependencies retain their original license files.
 5. Update provenance/version records and third-party notices when their contents or versions change, then commit the archive, manifests and documentation together.
 
-Upstream source: [nobrowning/llm-discovery-core](https://github.com/nobrowning/llm-discovery-core). The first public `v0.3.0` release uses the archive from core commit `d0c07b4`, including its release installation documentation and tooling metadata; runtime code is unchanged from the earlier development snapshot. Its SHA-256 is `7b7cbd798ebc92922c47acceda4a42c993b03870494c533c89ce3532e5f2f151`. The lockfile pins the exact archive bytes. Future published versions must not be silently replaced.
+Upstream source: [nobrowning/llm-discovery-core](https://github.com/nobrowning/llm-discovery-core). The current `0.3.1` archive comes from core commit `0d9772e`, adding shared IPv4 interface listing and local-address validation. It was built from a clean LF checkout. Its SHA-256 is `826340d0629cd8e45319198a44ef1c4a81e1b8bf3742b5920cbb9e4b1438161c`. The lockfile pins the exact bytes. Published versions must not be silently replaced.

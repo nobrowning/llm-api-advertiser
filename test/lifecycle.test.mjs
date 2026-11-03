@@ -26,6 +26,33 @@ function fakeFactory(options) {
   return { sockets, factory(config) { const socket = new FakeTransport(config, options); sockets.push(socket); return socket; } };
 }
 
+test('advertiser validates local IPv4 selection before constructing a transport', async () => {
+  for (const interfaceAddress of ['en0', '192.168.50.99', '::1', '127.0.0.1']) {
+    const { sockets, factory } = fakeFactory();
+    const advertiser = createAdvertiser({ services: [service], interfaceAddress, networkInterfaces: network, transportFactory: factory });
+    await assert.rejects(advertiser.start(), /IPv4|not currently attached/);
+    assert.equal(sockets.length, 0);
+    assert.equal(advertiser.status, 'stopped');
+  }
+  const { sockets, factory } = fakeFactory();
+  const offline = createAdvertiser({ services: [service], networkInterfaces: () => ({}), transportFactory: factory });
+  await assert.rejects(offline.start(), /No active IPv4/);
+  assert.equal(sockets.length, 0);
+});
+
+test('advertiser uses the shared first IPv4 default and checks an address again after stopping', async t => {
+  let attached = true;
+  const { sockets, factory } = fakeFactory();
+  const advertiser = createAdvertiser({ services: [service], networkInterfaces: () => attached ? network() : {}, transportFactory: factory, sleep: async () => {} });
+  t.after(() => advertiser.stop());
+  await advertiser.start();
+  assert.equal(sockets[0].config.interface, '192.168.50.2');
+  await advertiser.stop();
+  attached = false;
+  await assert.rejects(advertiser.start(), /No active IPv4/);
+  assert.equal(sockets.length, 1);
+});
+
 test('cache-flush protects split address RRsets received within one second', () => {
   let time = 0;
   const client = createDiscoveryClient({ now: () => time });
@@ -49,7 +76,7 @@ test('malformed records and non-mDNS source ports do not crash or create candida
   assert.equal(client.snapshot().length, 0);
 });
 
-test('split PTR triggers immediate resolution and Windows sockets bind ANY with explicit membership', async (t) => {
+test('split PTR triggers immediate resolution and sockets bind ANY with explicit membership', async (t) => {
   const { sockets, factory } = fakeFactory();
   const client = createDiscoveryClient({ interfaceAddress: '192.168.50.2', transportFactory: factory, networkInterfaces: network });
   t.after(() => client.stop());
@@ -93,7 +120,7 @@ test('stopping discovery during bind rejects startup and leaves no socket runnin
 
 test('advertiser probes three times without cache flush, announces twice, and ignores stale known answers', async (t) => {
   const { sockets, factory } = fakeFactory();
-  const advertiser = createAdvertiser({ services: [service], interfaceAddress: '192.168.50.2', transportFactory: factory, sleep: async () => {}, random: () => 0 });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service], interfaceAddress: '192.168.50.2', transportFactory: factory, sleep: async () => {}, random: () => 0 });
   t.after(() => advertiser.stop());
   await advertiser.start();
   assert.equal(sockets[0].config.bind, '0.0.0.0');
@@ -109,7 +136,7 @@ test('advertiser probes three times without cache flush, announces twice, and ig
 
 test('legacy unicast answers preserve query ID and never carry cache-flush or long TTL', async (t) => {
   const { sockets, factory } = fakeFactory();
-  const advertiser = createAdvertiser({ services: [service], transportFactory: factory, sleep: async () => {} });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service], transportFactory: factory, sleep: async () => {} });
   t.after(() => advertiser.stop()); await advertiser.start();
   const rinfo = { port: 60000, address: '192.168.50.2' };
   sockets[0].emit('query', { id: 42, questions: [{ name: SERVICE_TYPE, type: 'PTR' }] }, rinfo);
@@ -120,7 +147,7 @@ test('legacy unicast answers preserve query ID and never carry cache-flush or lo
 
 test('shared host records survive a single-service goodbye; the last owner withdraws them', async (t) => {
   const { sockets, factory } = fakeFactory();
-  const advertiser = createAdvertiser({ services: [service, vision], transportFactory: factory, sleep: async () => {} });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service, vision], transportFactory: factory, sleep: async () => {} });
   t.after(() => advertiser.stop()); await advertiser.start();
   await advertiser.setEnabled(service.id, false);
   const first = sockets[0].responses.at(-1).packet.answers;
@@ -135,7 +162,7 @@ test('established ownership defends probes, but a genuine response collision abo
   const { sockets, factory } = fakeFactory({ query(packet, socket) {
     if (packet.authorities?.length) socket.emit('response', { answers: serviceRecords({ ...service, port: 18444 }) });
   } });
-  const advertiser = createAdvertiser({ services: [service], transportFactory: factory, sleep: async () => {} });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service], transportFactory: factory, sleep: async () => {} });
   t.after(() => advertiser.stop());
   await assert.rejects(advertiser.start(), /name conflict/);
   assert.equal(advertiser.status, 'stopped');
@@ -149,7 +176,7 @@ test('simultaneous-probe loser defers and retries instead of causing both owners
   const { sockets, factory } = fakeFactory({ query(packet, socket) {
     if (!sent) { sent = true; socket.emit('query', { questions: packet.questions, authorities: serviceRecords({ ...service, port: 18444 }).filter((r) => r.type !== 'PTR') }); }
   } });
-  const advertiser = createAdvertiser({ services: [service], transportFactory: factory, sleep: async (ms) => { sleeps.push(ms); }, random: () => 0 });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service], transportFactory: factory, sleep: async (ms) => { sleeps.push(ms); }, random: () => 0 });
   t.after(() => advertiser.stop()); await advertiser.start();
   assert.equal(advertiser.status, 'announcing');
   assert.equal(sockets[0].queries.length, 4);
@@ -161,7 +188,7 @@ test('stop during announcement delay never resurrects an advertiser or sends a s
   let announceWaiting;
   const waiting = new Promise((resolve) => { announceWaiting = resolve; });
   const { sockets, factory } = fakeFactory();
-  const advertiser = createAdvertiser({ services: [service], transportFactory: factory, sleep: (ms) => ms === 1000 ? new Promise((resolve) => { release = resolve; announceWaiting(); }) : Promise.resolve() });
+  const advertiser = createAdvertiser({ networkInterfaces: network, services: [service], transportFactory: factory, sleep: (ms) => ms === 1000 ? new Promise((resolve) => { release = resolve; announceWaiting(); }) : Promise.resolve() });
   const start = advertiser.start();
   const rejected = assert.rejects(start, /cancelled/);
   await waiting;

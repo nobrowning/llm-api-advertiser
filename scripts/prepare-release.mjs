@@ -56,7 +56,12 @@ console.log('Installed archive exports and example configuration passed.');
   const check = npm(['exec', '--offline', '--no', '--', 'llm-api-advertise', '--config', example, '--check'], scratch, cleanCache);
   assert.equal(JSON.parse(check).valid, true);
   assert.match(npm(['exec', '--offline', '--no', '--', 'llm-api-advertise', '--help'], scratch, cleanCache), /Usage: llm-api-advertise/);
-  process.stdout.write('Installed CLI --help and --check passed with an empty offline npm cache.\n');
+  const listed = JSON.parse(npm(['exec', '--offline', '--no', '--', 'llm-api-advertise', '--list-interfaces', '--json'], scratch, cleanCache));
+  assert.ok(Array.isArray(listed.interfaces));
+  const generated = join(scratch, 'generated example.json');
+  npm(['exec', '--offline', '--no', '--', 'llm-api-advertise', '--example', generated], scratch, cleanCache);
+  assert.equal(JSON.parse(npm(['exec', '--offline', '--no', '--', 'llm-api-advertise', '--config', generated, '--check'], scratch, cleanCache)).valid, true);
+  process.stdout.write('Installed CLI help, check, interface listing, and example generation passed with an empty offline npm cache.\n');
 } finally {
   const tempRoot = await realpath(tmpdir());
   const target = await realpath(scratch);
